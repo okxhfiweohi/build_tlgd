@@ -1,0 +1,39 @@
+name: build dict
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.12
+          cache: pip
+
+      - name: Install Dependencies
+        run: |
+          # sudo apt install -y libyaml-dev
+          python -m pip install -r requirements.txt
+          echo ""
+          python -c "import yaml; print(f'libyaml enabled: {yaml.__with_libyaml__}')"
+      - name: Fetch dict data
+        env:
+          REPOPAT: ${{ secrets.READ_DICT_REPOS }}
+        run: |
+          mkdir -p ori
+          git clone https://${REPOPAT}@github.com/okxhfiweohi/my_dict_data.git ori/my_dict_data
+      - name: Build
+        run: |
+          bash ./build_lib.sh
+          bash build_dict.sh
+      - name: 打包文件夹并上传Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tlgd
+          path: ./build/
+          retention-days: 3
+          if-no-files-found: warn
